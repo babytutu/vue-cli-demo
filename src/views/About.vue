@@ -23,4 +23,8 @@ export default {
   },
 }
 </script>
-
+<style scoped>
+.about{
+  font-size: 24px
+}
+</style>
