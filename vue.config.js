@@ -4,5 +4,5 @@ module.exports = {
       preProcessor: 'stylus',
       patterns: []
     }
-  }
+  },
 }

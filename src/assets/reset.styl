@@ -1,0 +1,111 @@
+html
+  -webkit-text-size-adjust: 100%
+  -ms-text-size-adjust: 100%
+
+/* 保证层高 */
+body,html,#app
+  height: 100%
+  background: #fff
+  font-size: $font-size-s
+  color: $color-dark
+  font-family: 'PingFangSC-Regular', 'Source Han Sans', Arial, 'Hiragino Sans GB', 'Microsoft Yahei'
+
+/* 内外边距通常让各个浏览器样式的表现位置不同 */
+body,div,dl,dt,dd,ul,ol,li,h1,h2,h3,h4,h5,h6,pre,code,form,fieldset,legend,input,textarea,p,blockquote,th,td,hr,button,article,aside,details,figcaption,figure,footer,header,hgroup,menu,nav,section
+  margin: 0
+  padding: 0
+li
+  list-style-type: none
+/* 更改盒子模型 */
+*
+  box-sizing: border-box
+
+//  hover
+*, *:hover, *:focus
+  -webkit-overflow-scrolling: touch
+// 去掉ios android
+textarea, input, button, select
+  resize: none
+  border-radius: 0
+  border: 0
+  -webkit-appearance:none
+  outline: none
+
+button
+  background: #fff
+
+button:focus
+    outline: 0
+
+select
+  -webkit-appearance: none
+  border: none
+  background: none
+  font-size: 100%
+
+input
+  font-size: 100%
+
+a
+  text-decoration: none
+  color: $color-primary
+  &:hover,&:focus
+    color: $color-primary
+i
+  font-style normal
+
+/* img样式初始化 */
+img
+  display: inline-block
+  vertical-align: bottom
+  max-width: 100%
+
+a, img, button, input, textarea, span, i, div {
+  -webkit-tap-highlight-color: rgba(255, 255, 255, 0);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.text-over{
+  overflow hidden
+  text-overflow ellipsis
+  white-space nowrap
+}
+
+::-webkit-input-placeholder {
+  color #aaa
+}
+
+
+/* 可以设置不同的进入和离开动画 */
+/* 设置持续时间和动画函数 */
+.slide-fade-enter-active, .slide-fade-left-enter-active {
+  transition: all .3s ease;
+}
+.slide-fade-leave-active, .slide-fade-left-leave-active {
+  transition: all .8s cubic-bezier(1.0, 0.5, 0.8, 1.0);
+}
+.slide-fade-enter, .slide-fade-leave-to
+/* .slide-fade-leave-active for below version 2.1.8 */ {
+  transform: translateX(50%);
+  opacity: 0;
+}
+
+.slide-fade-left-enter, .slide-fade-left-leave-to
+/* .slide-fade-leave-active for below version 2.1.8 */ {
+  transform: translateX(-50%);
+  opacity: 0;
+}
+
+// border
+$border-color = rgba(221,221,221,0.5)
+
+// 1px-border
+borderPx()
+  border 1Px solid $border-color
+
+.content-text
+  margin-bottom 10px
+  padding 10px
+  border 1Px solid $border-color
+  word-wrap: break-word;
+  word-break: break-word;

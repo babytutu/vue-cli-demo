@@ -1,3 +1,6 @@
+/**
+ * rem响应式方案的实现
+ */
 const win = global
 const doc = win.document
 const baseWidth = 750
