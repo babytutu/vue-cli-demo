@@ -1,25 +1,25 @@
 <template>
   <div class="about">
-    <h1>{{detail.title}}</h1>
-    <div v-html="detail.content"></div>
+    <h1>{{detail}}</h1>
+    <p>{{socket.id}}</p>
   </div>
 </template>
 <script>
+import io from 'socket.io-client'
+
 export default {
   data() {
     return {
-      detail: {}
+      detail: {},
+      socket: ''
     }
   },
   created() {
-    this.getList()
-  },
-  methods: {
-    getList() {
-      this.axios.get('https://interface.meiriyiwen.com/article/day?dev=1&date=20180911').then(res => {
-        this.detail = res.data.data
-      })
-    }
+    this.socket = io('http://localhost:8000')
+    this.socket.on('this', (data) => {
+      this.detail = data.will
+      this.socket.emit('private message', 'hehe', 'hello')
+    })
   },
 }
 </script>

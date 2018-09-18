@@ -23,10 +23,9 @@
 </template>
 <script>
 import Qs from 'qs'
-import Vue from 'vue'
-import VueSocketio from 'vue-socket.io'
 
-import Stomp from 'stompjs'
+import sdk from '@/plugins/socket-jssdk'
+
 import kfFooter from '@/components/footer.vue'
 import customer from '@/components/customer.vue'
 import kf from '@/components/kf.vue'
@@ -35,14 +34,11 @@ export default {
   name: 'home',
   data() {
     return {
-      wsUrl: 'ws://10.0.10.236:8080/sys/myapp/ws/092/yduczjra/websocket?CASTGC=TGT-218-9lkRelTb7qv2zbFs2q5Dzi7o4o2xYcesafmbzrc6QzeXr2MyvZ-cas01.example.org',
       content: '',
       userMsg: '',
       client: '',
-      topic: '/app/subscribe',
       qa: [],
       qaList: [],
-      file: ''
     }
   },
   components: {
@@ -52,6 +48,7 @@ export default {
   },
   created () {
     this.getList()
+    sdk.login('hehe')
   },
   mounted() {
     this.content = document.getElementById('content')
@@ -59,22 +56,13 @@ export default {
   /**
    * 页面销毁前断开连接
    */
-  // beforeDestroy() {
-  //   console.log('closed')
-  //   this.client.disconnect()
-  // },
-  sockets:{
-    connect: function(){
-      console.log('socket connected')
-    },
-    customEmit: function(val){
-      console.log('this method was fired by the socket server. eg: io.emit("customEmit", data)', val)
-    }
+  beforeDestroy() {
+    console.log('closed')
+    sdk.logout()
   },
   methods: {
     callKF() {
-      Vue.use(VueSocketio, 'ws://10.0.12.86:9909')
-      this.$socket.emit('chatevent', 'open')
+      sdk.sendMessageBySocktIo('chatevent', 'open')
     },
     /**
      * 常见问题列表
@@ -133,38 +121,6 @@ export default {
       this.$nextTick(() => {
         document.getElementById('content').scrollIntoView(false)
       })
-    },
-    /**
-     * 获取响应
-     */
-    responseCallback (frame) {
-      console.log('responseCallback msg=>' + frame.body)
-    },
-    /**
-     * 建立stomp链接
-     */
-    connect() {
-      this.client = Stomp.client(this.wsUrl)
-      var headers = {
-        // 'login': '0324',
-        // 'passcode': '0324',
-        // 'client-id': 'clientid'
-        // additional header
-      }
-      this.client.connect(headers, this.onConnected, this.onFailed)
-    },
-    /**
-     * 订阅
-     */
-    onConnected(frame) {
-      console.log('Connected: ' + frame)
-      this.client.subscribe(this.topic, this.responseCallback, this.onFailed)
-    },
-    /**
-     * 连接失败
-     */
-    onFailed(frame) {
-      console.log('Failed: ' + frame)
     },
   },
 }
