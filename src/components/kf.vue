@@ -4,7 +4,10 @@
       <img src="~@/assets/kf.png" alt="客服头像">
       <div class="kf-wraper-content">
         <p>机器人客服</p>
-        <div class="kf-wraper-content-msg content-text">{{text}}</div>
+        <div class="kf-wraper-content-msg content-text">
+          {{text}}
+          <slot></slot>
+        </div>
       </div>
     </div>
   </transition>

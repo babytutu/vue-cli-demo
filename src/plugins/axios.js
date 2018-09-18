@@ -6,14 +6,15 @@ import axios from "axios";
 // Full config:  https://github.com/axios/axios#request-config
 // axios.defaults.baseURL = process.env.baseURL || process.env.apiUrl || '';
 // axios.defaults.headers.common['Authorization'] = AUTH_TOKEN;
-// axios.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded';
-axios.defaults.headers.post['Content-Type'] = 'application/json;charset=UTF-8'
+axios.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded';
+
+const prefix = 'http://10.0.10.236:7555/hsipccweb'
 
 let config = {
-  // baseURL: process.env.baseURL || process.env.apiUrl || ""
+  baseURL: process.env.baseURL || process.env.apiUrl || prefix,
   // timeout: 60 * 1000, // Timeout
-  // withCredentials: true, // Check cross-site Access-Control
-};
+  withCredentials: true, // Check cross-site Access-Control
+}
 
 const _axios = axios.create(config);
 
@@ -32,7 +33,11 @@ _axios.interceptors.request.use(
 _axios.interceptors.response.use(
   function(response) {
     // Do something with response data
-    return response;
+    let data
+    if (response.status === 200) {
+      data = response.data
+    }
+    return data
   },
   function(error) {
     // Do something with response error
