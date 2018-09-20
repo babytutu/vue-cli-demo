@@ -1,19 +1,32 @@
 /* eslint-disable */
 import io from 'socket.io-client'
+
+import ipcc from './ipcc'
+
+var isProxy = false
+var ipAndPort = '10.0.10.199:8092'
+var webbot_url = 'http://10.0.10.222:80'
+
 /**
  * 整理下原有代码，搬迁加优化，逻辑不动
  */
-const disconnection = 0
+let disconnection = 0
 const socketio_connectEvent = "connect"
 const socketio_disconnectEvent = "disconnect"
 // const socketio_errorEvent = "error"
 const socketio_messageEvent = "chatevent"
 
-let socket_io_url = ""
+let socket_io_url = "http://10.0.10.223:9909"
 let webchat_login = ''
-let webchat_sendFile = ''
-let webchat_satis = ''
+// let webchat_sendFile = ''
+// let webchat_satis = ''
 let webchat_getDetails = ''
+
+// let webSocketConnected = false;
+
+
+// let ws_state = 0;
+// let use_ws = true;
 
 let siConn_main = null // 建立socket.io链接
 
@@ -33,30 +46,28 @@ let s_queue = ""
 // 技能
 let s_remarks = ""
 // 客户选择的技能
-let s_skill = ""
+// let s_skill = ""
 let s_curfromNumberName = "" // s_name+'|'+s_userTel
 // 转人工后生成jobId
 let s_jobId = ""
 //
 let s_toNumber = ""
 // 客户的电话号码
-let s_phoneNumber = ""
+// let s_phoneNumber = ""
 
-let webSocketConnected = false
+window.webSocketConnected = false
 
-let s_host = ""
+// let s_host = ""
 
 let s_isDeptId = ""
 
 let s_deptId = ""
 
 let manualDisConnect = false
-let webchat_satisfy_control = ''
+// let webchat_satisfy_control = ''
 //sockt.io连接
 let resumable = false
 
-let isProxy = false
-let ipAndPort = ''
 /**
  * ===============================客户端发送接口 socktio连接=================================
  */
@@ -83,6 +94,7 @@ function login(userName, nickName, userTel, vipLevel, deptFlag, dept, cus_info, 
   var url = webchat_login + _param
   console.log("url===" + url)
   doJsonGet(url, function (obj) {
+    console.log('doJsonGet', obj)
     if (obj.resultCode == "0") {
       console.log("登录成功")
       callback(obj)
@@ -122,11 +134,10 @@ function setProxyUrlSocktIO(isproxy, host, isdeptid, dept) { // department id/na
   //	_host = (isproxy && dept != '') ? (host + '/uipcc/'+departments) : (host)
   _host = host
   // http://[domain]/uipcc/deptid/[deptid]/ucagent/portal_proxy.jsp?deptId=101&name=1000&isProxyWithDeptId=true
-  socket_io_url = 'http://' + host.split(":")[0] + ":9909"
 
   webchat_login = 'http://' + _host + '/ucWebchat2CustomerServer/servlet/webchat_service/login'
-  webchat_sendFile = 'http://' + _host + '/ucWebchat2CustomerServer/servlet/upload'
-  webchat_satis = 'http://' + _host + '/ucWebchat2CustomerServer/servlet/satisfaction'
+  // webchat_sendFile = 'http://' + _host + '/ucWebchat2CustomerServer/servlet/upload'
+  // webchat_satis = 'http://' + _host + '/ucWebchat2CustomerServer/servlet/satisfaction'
   webchat_getDetails = 'http://' + _host + '/ucWebchat2CustomerServer/servlet/history'
   return _host
 }
@@ -177,7 +188,8 @@ function siconnection(userName, p_resumable) {
   console.log("socket.io服务器连接地址:" + url)
   var options = { 'reconnect': false, 'auto connect': false, "force new connection": true }
   siConn_main = io.connect(url, options)
-  ws_state = siConn_main.io.readyState
+  // 这个参数好像没用到
+  // ws_state = siConn_main.io.readyState
   if (true == p_resumable || "true" == p_resumable) {
     resumable = true
   } else {
@@ -199,7 +211,7 @@ function siconnection(userName, p_resumable) {
       console.log("重新连接")
       reconnect.start() // 重连
       disconnection = 1
-      onDisConnectionEvent(disconnection)
+      ipcc.onDisConnectionEvent(disconnection)
     }
   })
   /*	siConn_main.on(socketio_errorEvent,function(){
@@ -218,6 +230,10 @@ function siconnection(userName, p_resumable) {
   siConn_main.on(socketio_messageEvent, function (json) {
     //		heartBeat.reset()// 更新心跳
     // var data = eval('(' + json + ')')
+    let _hostname
+    let fileUrl
+    let _begin
+    let _end
     const data = JSON.parse(json)
     console.log("服务端响应处理")
     if ("heartbeat" == data.eventKey) {
@@ -227,86 +243,90 @@ function siconnection(userName, p_resumable) {
         logout()
       }
     } else if ("searchAnswer" == data.eventKey) {
-      onRobbotAnswer(data.resultCode, data.resultText, data.msgId, data.remark)
+      ipcc.onRobbotAnswer(data.resultCode, data.resultText, data.msgId, data.remark)
     } else if ("clientSendReply" == data.eventKey) {
       console.log("clientSendReply---" + data)
+      console.log(data)
       if ("toAgent" == data.type) { // 请求转人工 的返回
         s_jobId = data.resultPath.jobId
         modifyWebchatSatisfyControl(data.satisfyControl)
-        onAgentServiceBack(data.resultCode, data.resultText)
+        ipcc.onAgentServiceBack(data.resultCode, data.resultText)
       } else if ("sendText" == data.type) { // 发送文本消息
-        onSendTextBack(data.resultCode, data.resultText, data.msgId, data.remark)
+        ipcc.onSendTextBack(data.resultCode, data.resultText, data.msgId, data.remark)
       } else if ("sendFile" == data.type) { // 发送文件
         var _fileUrl = data.fileUrl
         if (isProxy) {
-          var _hostname = setProxyUrlSocktIO(isProxy, ipAndPort, s_isDeptId, s_deptId)
+          _hostname = setProxyUrlSocktIO(isProxy, ipAndPort, s_isDeptId, s_deptId)
           _hostname = _hostname.split(":")[0] + ":8080"
           _fileUrl = _fileUrl.replace(_fileUrl.substring(0, _fileUrl.indexOf('/recorderfileserver')), _hostname)
         }
-        onSendFileBack(data.resultCode, data.resultText, _fileUrl, data.msgId, data.subFileType)
+        ipcc.onSendFileBack(data.resultCode, data.resultText, _fileUrl, data.msgId, data.subFileType)
       } else if ("sendPic" == data.type) { // 发送图片消息
-        var _begin = data.resultPath.begin
-        var _end = data.resultPath.end
+        _begin = data.resultPath.begin
+        _end = data.resultPath.end
         if (isProxy) {
-          var _hostname = setProxyUrlSocktIO(isProxy, ipAndPort, s_isDeptId, s_deptId)
+          _hostname = setProxyUrlSocktIO(isProxy, ipAndPort, s_isDeptId, s_deptId)
           _hostname = _hostname.split(":")[0] + ":8080"
           _begin = 'http://' + _begin.replace(_begin.substring(0, _begin.indexOf('/recorderfileserver')), _hostname)
           _end = 'http://' + _end.replace(_end.substring(0, _end.indexOf('/recorderfileserver')), _hostname)
         }
-        var fileUrl = [_begin, _end]
-        onSendPicBack(data.resultCode, data.resultText, fileUrl, data.msgId)
+        fileUrl = [_begin, _end]
+        ipcc.onSendPicBack(data.resultCode, data.resultText, fileUrl, data.msgId)
       } else if ("sendRemote" == data.type) { // 请求远程的返回
-        onSendRemote(data.resultCode, data.resultText) // 远程连接失败
+        // 没找到
+        // onSendRemote(data.resultCode, data.resultText) // 远程连接失败
       } else if ("disconnectSeatLink" == data.type) { // 坐席连接断开
-        onDisconnectSeatLink()
+        ipcc.onDisconnectSeatLink()
       }
     } else if ("agentReply" == data.eventKey) {
       s_toNumber = data.fromNumber // gonnghao
       s_jobId = data.jobId
       var content = unescape(data.content)
       console.log("agentReply--" + data)
+      console.log(data)
       if (data.srvType == "dialogEvent" && data.type == "ack") { // 已于坐席建立连接
-        onAgentAckEvent(s_toNumber, content, s_jobId)
+        ipcc.onAgentAckEvent(s_toNumber, content, s_jobId)
       } else if ((data.srvType == "statusManage" &&
           (data.type == "transferGroup" || data.type == "transfer")) ||
         "10" == data.contentType) { // zhuanjie
-        var state = 1
-        if ("10" == data.contentType) {
-          state = 2
-        }
-        onAgentTransferEvent(state, s_toNumber, content) // state 1 正在转接,
+        // var state = 1
+        // if ("10" == data.contentType) {
+        //   state = 2
+        // }
+        // 没找到这个方法
+        // onAgentTransferEvent(state, s_toNumber, content) // state 1 正在转接,
         // 2 转接成功
       } else if (data.srvType == "dialogEvent" && data.type == "send") { // 接收坐席端消息
         if ("_U3C_SAT_" == content) { // 满意度
-          onAgentToUserSatisEvent(content)
+          ipcc.onAgentToUserSatisEvent(content)
         } else if ("0" == data.contentType) { // 座席端发送文本,表情
-          onAgentToUserTextEvent(s_toNumber, content)
+          ipcc.onAgentToUserTextEvent(s_toNumber, content)
         } else if ("1" == data.contentType) { // 座席端发送图片
           var picUrl = data.content.split('|')
-          var _begin = picUrl[0]
-          var _end = picUrl[1]
+          _begin = picUrl[0]
+          _end = picUrl[1]
           if (isProxy) {
-            var _hostname = setProxyUrlSocktIO(isProxy, ipAndPort, s_isDeptId, s_deptId)
+            _hostname = setProxyUrlSocktIO(isProxy, ipAndPort, s_isDeptId, s_deptId)
             _hostname = _hostname.split(":")[0] + ":8080"
             _begin = 'http://' + _begin.replace(_begin.substring(0, _begin.indexOf('/recorderfileserver')), _hostname)
             _end = 'http://' + _end.replace(_end.substring(0, _end.indexOf('/recorderfileserver')), _hostname)
           }
-          var fileUrl = [_begin, _end]
-          onAgentToUserPicEvent(s_toNumber, fileUrl)
+          fileUrl = [_begin, _end]
+          ipcc.onAgentToUserPicEvent(s_toNumber, fileUrl)
         } else if ("2" == data.contentType) { // 座席端发送文件
           var url = data.content.split('|')
           var fileName = url[0] // 文件名
-          var fileUrl = url[1]
+          fileUrl = url[1]
           if (isProxy) {
-            var _hostname = setProxyUrlSocktIO(isProxy, ipAndPort, s_isDeptId, s_deptId)
+            _hostname = setProxyUrlSocktIO(isProxy, ipAndPort, s_isDeptId, s_deptId)
             _hostname = _hostname.split(":")[0] + ":8080"
             fileUrl = 'http://' + fileUrl.replace(fileUrl.substring(0, fileUrl.indexOf('/recorderfileserver')), _hostname)
           }
           // url资源路径
           var downLoad_url = webbot_url + "/uipcc/customer/servlet/DownLoadServlet?downFile=" + fileUrl + "/" + fileName + "&fileName=" + fileName + "&contentType=2"
-          onAgentToUserFileEvent(s_toNumber, fileName, downLoad_url)
+          ipcc.onAgentToUserFileEvent(s_toNumber, fileName, downLoad_url)
         } else if ("4" == data.contentType) { // 座席端发送webcall
-          toSendWebCall(data)
+          // toSendWebCall(data)
         } else if ("5" == data.contentType) { // 座席端发送远程连接 远程的状态
           // 远程协助
           /**
@@ -319,28 +339,49 @@ function siconnection(userName, p_resumable) {
            * content=="rejectControl对方拒绝你的远程控制请求
            * content=="stopControl成功取消控制
            */
-          remoteCallBack(s_jobId, data.toNumber, s_toNumber, content)
+          // remoteCallBack(s_jobId, data.toNumber, s_toNumber, content)
         } else if ("10" == data.contentType) { // zhuanjiechenggong
-          onAgentTransfered(s_toNumber, content)
+          ipcc.onAgentTransfered(s_toNumber, content)
         }
       } else if (data.srvType == "dialogEvent" && data.type == "close") { // 服务端关闭连接
         if (data.fromNumber == "Administrator") {
-          onAgentHangUpEvent(1) // 1：表示系统超时挂断
+          ipcc.onAgentHangUpEvent(1) // 1：表示系统超时挂断
         } else if (data.fromNumber == "timeout") {
-          onAgentHangUpEvent(2) // 2：坐席拒接
+          ipcc.onAgentHangUpEvent(2) // 2：坐席拒接
         } else {
-          onAgentHangUpEvent(0) // 0: 表示坐席主动挂断
+          ipcc.onAgentHangUpEvent(0) // 0: 表示坐席主动挂断
         }
-        heartBeat.clear()
+        // heartBeat.clear()
       }
     } else if ("leavingMsg" == data.eventKey) {
-      onSendLeavingMsgBack(data.success)
+      ipcc.onSendLeavingMsgBack(data.success)
     }
   })
 }
 
+/**
+ * 与客户聊天接口
+ * @param message 消息体
+ * @param messageType 消息类型
+ */
+function sendTextToAgent(message, msgId, remark) {
+  var wrappedMsgId = wrapMsgId(msgId);
+  var postData = JSON.stringify({ type: "send", jobId: s_jobId, fromNumber: sip_userName, toNumber: s_toNumber, queue: s_queue, message: message, userName: s_curfromNumberName, contentType: '0', msgId: wrappedMsgId, remark: remark });
+  sendMessageBySocktIo(siConn_main, "ClientSend_sendMessage", postData);
+};
+
+function wrapMsgId(msgId) {
+	var innerMsgId;
+	if ((typeof msgId) == "undefined") {
+		innerMsgId = "";
+	} else {
+		innerMsgId = msgId;
+	}
+	return innerMsgId;
+};
+
 function setWebSocketConnected() {
-  webSocketConnected = true
+  window.webSocketConnected = true
 }
 
 /**
@@ -382,66 +423,72 @@ function customerinfojson(webNickName, webClientName, webClientAccount, webClien
 import jsonp from 'jsonp'
 
 function doJsonGet(url, callback) {
-  jsonp(url, (err, data) => {
-    if (err) {
-      console.error(err.message)
-    } else {
-      callback(data)
-    }
-  })
-  // $.ajax({
-  //   type: 'get',
-  //   url: url,
-  //   dataType: 'jsonp',
-  //   jsonp: 'jsonpCallback',
-  //   success: function (data) {
+  // console.log(url)
+  // jsonp(url, function (err, data) {
+  //   if (err) {
+  //     console.error(err.message)
+  //   } else {
+  //     console.log(11111)
+  //     console.log(data)
   //     callback(data)
   //   }
   // })
-}
-
-function doJsonPost(type, url, data, callback) {
   $.ajax({
-    type: type,
+    type: 'get',
     url: url,
-    dataType: 'JSON',
-    accept: "application/json charset=utf-8",
-    contentType: "application/json charset=utf-8",
-    data: type == 'POST' ? data : null,
-    success: function (result) {
-      if (callback != null)
-        callback(result)
-    },
-    error: function (xmlhttp, status) {
-      var result = { resultCode: '-1', resultText: "连接异常(" + status + ")", errorCode: status }
-      callback(result)
+    dataType: 'jsonp',
+    jsonp: 'jsonpCallback',
+    success: function (data) {
+      callback(data)
     }
   })
 }
 
-function doServletPost(type, url, data, callback) {
-  $.ajax({
-    type: type,
-    url: url,
-    data: type == 'POST' ? data : null,
-    success: function (result) {
-      if (callback != null)
-        callback($.parseObj(result))
-    },
-    error: function (xmlhttp, status) {
-      var result = { resultCode: '-1', resultText: "连接异常(" + status + ")", errorCode: status }
-      callback(result)
-    }
-  })
-}
+// function doJsonPost(type, url, data, callback) {
+//   $.ajax({
+//     type: type,
+//     url: url,
+//     dataType: 'JSON',
+//     accept: "application/json charset=utf-8",
+//     contentType: "application/json charset=utf-8",
+//     data: type == 'POST' ? data : null,
+//     success: function (result) {
+//       if (callback != null)
+//         callback(result)
+//     },
+//     error: function (xmlhttp, status) {
+//       var result = { resultCode: '-1', resultText: "连接异常(" + status + ")", errorCode: status }
+//       callback(result)
+//     }
+//   })
+// }
+
+// function doServletPost(type, url, data, callback) {
+//   $.ajax({
+//     type: type,
+//     url: url,
+//     data: type == 'POST' ? data : null,
+//     success: function (result) {
+//       if (callback != null)
+//         callback($.parseObj(result))
+//     },
+//     error: function (xmlhttp, status) {
+//       var result = { resultCode: '-1', resultText: "连接异常(" + status + ")", errorCode: status }
+//       callback(result)
+//     }
+//   })
+// }
 
 //修改满意度开关状态
 function modifyWebchatSatisfyControl(satisfyControl) {
-  webchat_satisfy_control = satisfyControl
+  console.log(satisfyControl)
+  // webchat_satisfy_control = satisfyControl
 }
 
 export default {
   login,
   logout,
-  sendMessageBySocktIo
+  sendTextToAgent,
+  getHistoryMsg,
+  connectAgentService,
 }

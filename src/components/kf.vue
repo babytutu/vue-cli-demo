@@ -3,11 +3,11 @@
     <div class="kf-wraper">
       <img src="~@/assets/kf.png" alt="客服头像">
       <div class="kf-wraper-content">
-        <p>机器人客服</p>
-        <div class="kf-wraper-content-msg content-text">
-          {{text}}
-          <slot></slot>
+        <p>{{detail.fromNumber || '机器人客服'}}</p>
+        <div v-if="detail.msg" class="kf-wraper-content-msg content-text" v-html="detail.msg">
         </div>
+        <div v-if="text">{{text}}</div>
+        <slot></slot>
       </div>
     </div>
   </transition>
@@ -15,6 +15,15 @@
 <script>
 export default {
   props: {
+    detail: {
+      type: Object,
+      default() {
+        return {
+          fromNumber: null,
+          msg: null
+        }
+      }
+    },
     text: String,
   }
 }

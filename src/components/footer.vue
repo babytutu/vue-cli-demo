@@ -4,6 +4,7 @@
       <input class="user-msg" type="text" v-model="keywords" :placeholder="placeholder" @focus="scroll" />
       <button @click="onsend(keywords)">发送</button>
     </div>
+    <slot></slot>
   </footer>
 </template>
 
