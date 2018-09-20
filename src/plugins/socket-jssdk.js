@@ -420,8 +420,8 @@ function customerinfojson(webNickName, webClientName, webClientAccount, webClien
 }
 
 /** ****************webdchat 返回值处理函数******************* */
-import jsonp from 'jsonp'
-
+// import jsonp from 'jsonp'
+// 
 function doJsonGet(url, callback) {
   // console.log(url)
   // jsonp(url, function (err, data) {

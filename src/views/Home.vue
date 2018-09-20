@@ -1,6 +1,6 @@
 <template>
   <div class="home">
-    <mt-header title="在线客服"></mt-header>
+	<kfHeader></kfHeader>
     <div class="content">
       <div id="content">
         <kf text="您好，我是智能客服小远，请问有什么可以帮您？"
@@ -29,7 +29,19 @@
                @onsend="onsend">
       <button @click="transManmade">人工服务</button>
       <button @click="disconnect">挂断</button>
-    </kf-footer>
+	</kf-footer>
+    <!-- <div class="content">		
+		<div class="dContent">
+			<div id="content">
+				<zxTime></zxTime>		
+				<div v-for="i in qa" :key="i.time" v-if="i.msg">
+					<kf v-if="i.type === 1" :text="JSON.stringify(i)"></kf>
+					<customer v-else :text="i.msg"></customer>
+				</div>
+			</div>
+			<div class="cancelZx" @click="cancelZX">挂断</div>
+		</div>
+    </div> -->
   </div>
 </template>
 <script>
@@ -40,6 +52,8 @@ import sdk from '@/plugins/socket-jssdk'
 import kfFooter from '@/components/footer.vue'
 import customer from '@/components/customer.vue'
 import kf from '@/components/kf.vue'
+import kfHeader from '@/components/header.vue'
+import zxTime from '@/components/time.vue'
 
 export default {
   name: 'home',
@@ -58,12 +72,16 @@ export default {
       queue: '6666300_organ1',
       deptId: '6666',
       isConnected: false, //会话是否已建立（false为未建立）
+      topic: '/app/subscribe',
+      qa: [],
     }
   },
   components: {
     customer,
-    kf,
-    kfFooter
+		kf,
+    kfFooter,
+		kfHeader,
+		zxTime
   },
   created() {
     this.getList()
@@ -184,6 +202,32 @@ export default {
      */
     onsend(val) {
       if (!val) {
+//       if (val) {
+//         this.userMsg = ''
+//         this.qa.push({
+//           type: 2,
+//           msg: val,
+//           time: new Date().getTime()
+//         })
+//         this.client.send(this.topic, {}, val)
+// 				if(val=='转人工客服'){
+// 					this.qa.push({
+// 						type: 1,
+// 						msg: '正在帮您转接，请稍后...',
+// 						time: new Date().getTime() + 1,
+// 						zx:true
+// 					})
+// 				}else{
+// 					this.qa.push({
+// 						type: 1,
+// 						msg: '听不懂',
+// 						time: new Date().getTime() + 1,
+// 						zx:false
+// 					})
+// 				}
+//         
+//       } else {
+// 
         this.$messagebox('提示', '请输入您的问题')
         return
       }
@@ -222,7 +266,17 @@ export default {
         time: new Date().getTime() + 1,
         fromNumber
       })
-    }
+    },
+    responseCallback (frame) {
+      console.log('responseCallback msg=>' + frame.body)
+    },
+		cancelZX(){
+			this.$messagebox({
+				title: '提示',
+				message: '确定要挂断吗?',
+				showCancelButton: true
+			});
+		}
   },
 }
 </script>
@@ -231,9 +285,26 @@ export default {
   display flex
   flex-direction column
   height 100vh
+	
   .content
     margin 10px
     flex 1
     overflow-y scroll
-
+	background #f8f8f8	
+	.dContent
+		position relative
+		width 100%
+		height 100%
+		.cancelZx
+			width 0.7rem
+			height 0.7rem
+			background white
+			text-align center
+			line-height:0.7rem
+			border-radius 50%
+			color:#ccc
+			position absolute
+			left 0.1rem
+			bottom 0rem
+		
 </style>
